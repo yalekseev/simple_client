@@ -1,5 +1,3 @@
 cmake_minimum_required (VERSION 2.6)
 project (simple_client)
-find_package(Threads)
 add_executable (simple_client io.c client.c)
-target_link_libraries(simple_server pthread)
