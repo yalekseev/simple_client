@@ -141,11 +141,11 @@ void process_requests(int in, int sd, int out) {
     }
 }
 
-int create_socket(int socktype, const char *host, const char *port) {
+int create_socket(const char *host, const char *port) {
     struct addrinfo hints, *result;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = socktype;
+    hints.ai_socktype = SOCK_STREAM;
     int ret = getaddrinfo(host, port, &hints, &result);
     if (ret != 0) {
         fprintf(stderr, "getaddrinfo %s", gai_strerror(ret));
@@ -180,19 +180,12 @@ int create_socket(int socktype, const char *host, const char *port) {
 }
 
 int main(int argc, char *argv[]) {
-    int socktype = SOCK_STREAM;
     char *host = "localhost";
     char *port = "50000";
 
     int opt;
     while ((opt = getopt(argc, argv, "tuh:p:")) != -1) {
         switch (opt) {
-        case 't':
-            socktype = SOCK_STREAM;
-            break;
-        case 'u':
-            socktype = SOCK_DGRAM;
-            break;
         case 'h':
             host = optarg;
             break;
@@ -213,7 +206,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int sockfd = create_socket(socktype, host, port);
+    int sockfd = create_socket(host, port);
     if (-1 == sockfd) {
         exit(EXIT_FAILURE);
     }
