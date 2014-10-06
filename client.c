@@ -58,24 +58,27 @@ void process_requests(int in, int sd, int out) {
             FD_SET(out, &wset);
         }
 
-        select(maxfd, &rset, &wset, NULL, NULL);
+        if (select(maxfd, &rset, &wset, NULL, NULL) == -1) {
+            perror("select");
+            exit(EXIT_FAILURE);
+        }
 
         // read from input
         if (FD_ISSET(in, &rset)) {
             if ((n = read(in, toiptr, &to[MAXLINE] - toiptr)) < 0) {
                 if (errno != EWOULDBLOCK) {
-                    // TODO:
+                    perror("read");
+                    exit(EXIT_FAILURE);
                 }
             } else if (n == 0) {
-                fprintf(stderr, "EOF on stdin\n");
-
                 stdineof = 1;
                 if (tooptr == toiptr) {
-                    shutdown(sd, SHUT_WR);
+                    if (shutdown(sd, SHUT_WR) == -1) {
+                        perror("shutdown");
+                        exit(EXIT_FAILURE);
+                    }
                 }
             } else {
-                fprintf(stderr, "read %d bytes from stdin\n", n);
-
                 toiptr += n;
                 FD_SET(sd, &wset);
             }
@@ -85,17 +88,16 @@ void process_requests(int in, int sd, int out) {
         if (FD_ISSET(sd, &rset)) {
             if ((n = read(sd, friptr, &fr[MAXLINE] - friptr)) < 0) {
                 if (errno != EWOULDBLOCK) {
-                    // TODO:
+                    perror("read");
+                    exit(EXIT_FAILURE);
                 }
             } else if (n == 0) {
-                fprintf(stderr, "EOF on socket\n");
                 if (stdineof) {
                     return;
                 } else {
                     // TODO:
                 }
             } else {
-                fprintf(stderr, "read %d bytes from socket\n", n);
                 friptr += n;
                 FD_SET(out, &wset);
             }
@@ -105,10 +107,10 @@ void process_requests(int in, int sd, int out) {
         if (FD_ISSET(out, &wset) && ((n = friptr - froptr) > 0)) {
             if ((nwritten = write(out, froptr, n)) < 0) {
                 if (errno != EWOULDBLOCK) {
-                    // TODO:
+                    perror("write");
+                    exit(EXIT_FAILURE);
                 }
             } else {
-                fprintf(stderr, "wrote %d bytes to stdout\n", nwritten);
                 froptr += nwritten;
                 if (froptr == friptr) {
                     froptr = friptr = fr;
@@ -120,15 +122,18 @@ void process_requests(int in, int sd, int out) {
         if (FD_ISSET(sd, &wset) && ((n = toiptr - tooptr) > 0)) {
             if ((nwritten = write(sd, tooptr, n)) < 0) {
                 if (errno != EWOULDBLOCK) {
-                    // TODO:
+                    perror("write");
+                    exit(EXIT_FAILURE);
                 }
             } else {
-                fprintf(stderr, "wrote %d bytes to socket\n", nwritten);
                 tooptr += nwritten;
                 if (tooptr == toiptr) {
                     toiptr = tooptr = to;
                     if (stdineof) {
-                        shutdown(sd, SHUT_WR);
+                        if (shutdown(sd, SHUT_WR) == -1) {
+                            perror("shutdown");
+                            exit(EXIT_FAILURE);
+                        }
                     }
                 }
             }
