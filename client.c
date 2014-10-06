@@ -14,7 +14,7 @@
 
 enum { MAXLINE = 1024 };
 
-#define MAX(a,b) ((a)>(b)?(a):(b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 void process_requests(int in, int sd, int out) {
     ssize_t n, nwritten;
@@ -160,12 +160,14 @@ int create_socket(int socktype, const char *host, const char *port) {
             fprintf(stderr, "connect %s\n", strerror(errno));
             continue;
         }
+
+        break;
     }
 
     freeaddrinfo(result);
 
     if (NULL == p) {
-        fprintf(stderr, "Failed to connect to host\n");
+        fprintf(stderr, "Failed to connect to %s:%s\n", host, port);
         return -1;
     }
 
@@ -207,6 +209,9 @@ int main(int argc, char *argv[]) {
     }
 
     int sockfd = create_socket(socktype, host, port);
+    if (-1 == sockfd) {
+        exit(EXIT_FAILURE);
+    }
 
     process_requests(STDIN_FILENO, sockfd, STDOUT_FILENO);
 
